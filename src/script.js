@@ -1,114 +1,127 @@
-import SimpleLightbox from 'simplelightbox/dist/simple-lightbox.min.js';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 import Notiflix from 'notiflix';
-import { fetchImages } from './api.js';
+import { searchImages } from './api';
 
-const searchForm = document.getElementById('search-form');
+const API_KEY = '37206496-4ba23d7a61facc457fce3b97c';
+const form = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
+let page = 1;
+let searchQuery = '';
 
-const createImageCard = image => {
+form.addEventListener('submit', handleFormSubmit);
+loadMoreBtn.addEventListener('click', loadMoreImages);
+
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  gallery.innerHTML = '';
+  page = 1;
+  searchQuery = form.searchQuery.value.trim();
+
+  if (searchQuery === '') {
+    return;
+  }
+
+  loadMoreBtn.classList.add('hidden');
+  try {
+    const images = await searchImages(searchQuery, page);
+    if (images.length > 0) {
+      createImageCards(images);
+      if (images.length === 40) {
+        loadMoreBtn.classList.remove('hidden');
+      }
+    } else {
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+    }
+  } catch (error) {
+    console.log(error);
+    Notiflix.Notify.failure('An error occurred while fetching images.');
+  } finally {
+    form.searchQuery.value = ''; // Очищення поля вводу після запиту
+  }
+}
+
+function createImageCards(images) {
+  const fragment = document.createDocumentFragment();
+  for (const image of images) {
+    const card = createImageCard(image);
+    fragment.appendChild(card);
+  }
+  gallery.appendChild(fragment);
+
+  // Оновлена ініціалізація SimpleLightbox
+  const lightbox = new SimpleLightbox('.gallery a', {
+    captionsData: 'alt',
+    captionPosition: 'bottom',
+  });
+  lightbox.refresh();
+
+  window.addEventListener('scroll', handleScroll);
+}
+
+function createImageCard(image) {
   const card = document.createElement('div');
   card.classList.add('photo-card');
+
+  const link = document.createElement('a');
+  link.href = image.largeImageURL;
+  link.setAttribute('data-lightbox', 'photos');
 
   const img = document.createElement('img');
   img.src = image.webformatURL;
   img.alt = image.tags;
+  img.loading = 'lazy';
 
   const info = document.createElement('div');
   info.classList.add('info');
 
-  const likes = document.createElement('p');
-  likes.classList.add('info-item');
-  likes.textContent = `Likes: ${image.likes}`;
+  const likes = createInfoItem('Likes', image.likes);
+  const views = createInfoItem('Views', image.views);
+  const comments = createInfoItem('Comments', image.comments);
+  const downloads = createInfoItem('Downloads', image.downloads);
 
-  const views = document.createElement('p');
-  views.classList.add('info-item');
-  views.textContent = `Views: ${image.views}`;
-
-  const downloads = document.createElement('p');
-  downloads.classList.add('info-item');
-  downloads.textContent = `Downloads: ${image.downloads}`;
-
-  info.append(likes, views, downloads);
-  card.append(img, info);
+  info.append(likes, views, comments, downloads);
+  link.appendChild(img);
+  card.append(link, info);
 
   return card;
-};
+}
 
-const handleSearch = async event => {
-  event.preventDefault();
-  gallery.innerHTML = '';
-  loadMoreBtn.style.display = 'none';
+function createInfoItem(label, value) {
+  const item = document.createElement('p');
+  item.classList.add('info-item');
+  item.innerHTML = `<b>${label}: </b>${value}`;
+  return item;
+}
 
-  const formData = new FormData(event.target);
-  const searchQuery = formData.get('searchQuery');
-
-  if (searchQuery.trim() === '') {
-    Notiflix.Notify.warning('Please enter a search query.');
-    return;
-  }
-
+async function loadMoreImages() {
+  page++;
   try {
-    const data = await fetchImages(searchQuery);
-
-    if (data.hits.length === 0) {
-      Notiflix.Notify.info('No images found for your search query.');
-      return;
-    }
-
-    const cards = data.hits.map(createImageCard);
-    gallery.append(...cards);
-
-    if (data.totalHits > gallery.childElementCount) {
-      loadMoreBtn.style.display = 'block';
+    const images = await searchImages(searchQuery, page);
+    if (images.length > 0) {
+      createImageCards(images);
+      if (images.length < 40) {
+        loadMoreBtn.classList.add('hidden');
+      }
     } else {
-      Notiflix.Notify.info('No more images to load.');
+      loadMoreBtn.classList.add('hidden');
+      Notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
     }
-
-    // Clear the input field
-    event.target.reset();
   } catch (error) {
-    Notiflix.Notify.failure('Failed to fetch images. Please try again later.');
+    console.log(error);
+    Notiflix.Notify.failure('An error occurred while fetching images.');
   }
-};
+}
 
-const loadMoreImages = async () => {
-  try {
-    const formData = new FormData(searchForm);
-    const searchQuery = formData.get('searchQuery');
-
-    const data = await fetchImages(searchQuery, page + 1); // Запит на наступну сторінку
-
-    if (data.hits.length === 0) {
-      Notiflix.Notify.info('No more images to load.');
-      return;
-    }
-
-    const cards = data.hits.map(createImageCard);
-    gallery.append(...cards);
-
-    if (data.totalHits <= gallery.childElementCount) {
-      loadMoreBtn.style.display = 'none';
-      Notiflix.Notify.info('No more images to load.');
-    }
-
-    page++; // Збільшити номер поточної сторінки
-  } catch (error) {
-    Notiflix.Notify.failure('Failed to fetch images. Please try again later.');
-  }
-};
-
-searchForm.addEventListener('submit', handleSearch);
-loadMoreBtn.addEventListener('click', loadMoreImages);
-
-const lightbox = new SimpleLightbox('.gallery a', {
-  /* options */
-});
-
-window.addEventListener('scroll', () => {
-  const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
-
-  if (scrollTop + clientHeight >= scrollHeight - 10) {
+function handleScroll() {
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+  if (scrollTop + clientHeight >= scrollHeight - 5) {
+    window.removeEventListener('scroll', handleScroll);
     loadMoreImages();
   }
-});
+}
