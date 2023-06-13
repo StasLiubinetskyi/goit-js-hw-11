@@ -1,28 +1,10 @@
-import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
+import SimpleLightbox from 'simplelightbox/dist/simple-lightbox.min.js';
 import Notiflix from 'notiflix';
+import { fetchImages } from './api.js';
 
 const searchForm = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
-
-const API_KEY = '37206496-4ba23d7a61facc457fce3b97c';
-const BASE_URL = `https://pixabay.com/api/?key=${API_KEY}&image_type=photo&orientation=horizontal&safesearch=true`;
-
-let page = 1;
-let currentSearchQuery = '';
-
-const fetchImages = async searchQuery => {
-  try {
-    const url = `${BASE_URL}&q=${encodeURIComponent(searchQuery)}&page=${page}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    return data;
-  } catch (error) {
-    throw new Error('Something went wrong while fetching images.');
-  }
-};
 
 const createImageCard = image => {
   const card = document.createElement('div');
@@ -60,7 +42,6 @@ const handleSearch = async event => {
 
   const formData = new FormData(event.target);
   const searchQuery = formData.get('searchQuery');
-  currentSearchQuery = searchQuery;
 
   if (searchQuery.trim() === '') {
     Notiflix.Notify.warning('Please enter a search query.');
@@ -83,16 +64,20 @@ const handleSearch = async event => {
     } else {
       Notiflix.Notify.info('No more images to load.');
     }
+
+    // Clear the input field
+    event.target.reset();
   } catch (error) {
     Notiflix.Notify.failure('Failed to fetch images. Please try again later.');
   }
 };
 
 const loadMoreImages = async () => {
-  page += 1;
-
   try {
-    const data = await fetchImages(currentSearchQuery);
+    const formData = new FormData(searchForm);
+    const searchQuery = formData.get('searchQuery');
+
+    const data = await fetchImages(searchQuery, page + 1); // Запит на наступну сторінку
 
     if (data.hits.length === 0) {
       Notiflix.Notify.info('No more images to load.');
@@ -106,6 +91,8 @@ const loadMoreImages = async () => {
       loadMoreBtn.style.display = 'none';
       Notiflix.Notify.info('No more images to load.');
     }
+
+    page++; // Збільшити номер поточної сторінки
   } catch (error) {
     Notiflix.Notify.failure('Failed to fetch images. Please try again later.');
   }
@@ -116,4 +103,12 @@ loadMoreBtn.addEventListener('click', loadMoreImages);
 
 const lightbox = new SimpleLightbox('.gallery a', {
   /* options */
+});
+
+window.addEventListener('scroll', () => {
+  const { scrollTop, clientHeight, scrollHeight } = document.documentElement;
+
+  if (scrollTop + clientHeight >= scrollHeight - 10) {
+    loadMoreImages();
+  }
 });
