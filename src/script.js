@@ -40,8 +40,7 @@ async function handleFormSubmit(event) {
     console.log(error);
     Notiflix.Notify.failure('An error occurred while fetching images.');
   } finally {
-    form.searchQuery.value = ''; // Очищення поля вводу після запиту
-  }
+    form.searchQuery.value = ''; 
 }
 
 function createImageCards(images) {
@@ -52,7 +51,7 @@ function createImageCards(images) {
   }
   gallery.appendChild(fragment);
 
-  // Оновлена ініціалізація SimpleLightbox
+  
   const lightbox = new SimpleLightbox('.gallery a', {
     captionsData: 'alt',
     captionPosition: 'bottom',
