@@ -26,7 +26,7 @@ async function handleFormSubmit(event) {
     captionsData: 'alt',
     captionPosition: 'bottom',
   });
-}
+
   loadMoreBtn.classList.add('hidden');
   try {
     const images = await searchImages(searchQuery, page);
