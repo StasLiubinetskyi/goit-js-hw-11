@@ -3,7 +3,6 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 import Notiflix from 'notiflix';
 import { searchImages } from './api';
 
-const API_KEY = '37206496-4ba23d7a61facc457fce3b97c';
 const form = document.getElementById('search-form');
 const gallery = document.querySelector('.gallery');
 const loadMoreBtn = document.querySelector('.load-more');
@@ -95,31 +94,32 @@ async function handleFormSubmit(event) {
     return item;
   }
 
-  async function loadMoreImages() {
-    page++;
-    try {
-      const images = await searchImages(searchQuery, page);
-      if (images.length > 0) {
-        createImageCards(images);
-        if (images.length < 40) {
-          loadMoreBtn.classList.add('hidden');
-        }
-      } else {
+ async function loadMoreImages() {
+  page++;
+  try {
+    const images = await searchImages(searchQuery, page);
+    if (images.length > 0) {
+      createImageCards(images);
+      if (images.length < 40) {
         loadMoreBtn.classList.add('hidden');
-        Notiflix.Notify.info(
-          "We're sorry, but you've reached the end of search results."
-        );
       }
-    } catch (error) {
-      console.log(error);
-      Notiflix.Notify.failure('An error occurred while fetching images.');
+    } else {
+      loadMoreBtn.classList.add('hidden');
+      Notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
     }
+  } catch (error) {
+    console.log(error);
+    Notiflix.Notify.failure('An error occurred while fetching images.');
   }
+}
 
-  function handleScroll() {
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 5) {
-      window.removeEventListener('scroll', handleScroll);
+function handleScroll() {
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+  if (scrollTop + clientHeight >= scrollHeight - 5) {
+    window.removeEventListener('scroll', handleScroll);
+    if (!loadMoreBtn.classList.contains('hidden')) {
       loadMoreImages();
     }
   }
