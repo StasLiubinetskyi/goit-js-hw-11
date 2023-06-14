@@ -22,11 +22,11 @@ async function handleFormSubmit(event) {
   if (searchQuery === '') {
     return;
   }
-const lightbox = new SimpleLightbox('.gallery a', {
+  const lightbox = new SimpleLightbox('.gallery a', {
     captionsData: 'alt',
     captionPosition: 'bottom',
-});
-  
+  });
+}
   loadMoreBtn.classList.add('hidden');
   try {
     const images = await searchImages(searchQuery, page);
