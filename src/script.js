@@ -44,82 +44,83 @@ async function handleFormSubmit(event) {
     console.log(error);
     Notiflix.Notify.failure('An error occurred while fetching images.');
   } finally {
-    form.searchQuery.value = ''; 
-}
-
-function createImageCards(images) {
-  const fragment = document.createDocumentFragment();
-  for (const image of images) {
-    const card = createImageCard(image);
-    fragment.appendChild(card);
+    form.searchQuery.value = '';
   }
-  gallery.appendChild(fragment);
-    
-  lightbox.refresh();
 
-  window.addEventListener('scroll', handleScroll);
-}
-
-function createImageCard(image) {
-  const card = document.createElement('div');
-  card.classList.add('photo-card');
-
-  const link = document.createElement('a');
-  link.href = image.largeImageURL;
-  link.setAttribute('data-lightbox', 'photos');
-
-  const img = document.createElement('img');
-  img.src = image.webformatURL;
-  img.alt = image.tags;
-  img.loading = 'lazy';
-
-  const info = document.createElement('div');
-  info.classList.add('info');
-
-  const likes = createInfoItem('Likes', image.likes);
-  const views = createInfoItem('Views', image.views);
-  const comments = createInfoItem('Comments', image.comments);
-  const downloads = createInfoItem('Downloads', image.downloads);
-
-  info.append(likes, views, comments, downloads);
-  link.appendChild(img);
-  card.append(link, info);
-
-  return card;
-}
-
-function createInfoItem(label, value) {
-  const item = document.createElement('p');
-  item.classList.add('info-item');
-  item.innerHTML = `<b>${label}: </b>${value}`;
-  return item;
-}
-
-async function loadMoreImages() {
-  page++;
-  try {
-    const images = await searchImages(searchQuery, page);
-    if (images.length > 0) {
-      createImageCards(images);
-      if (images.length < 40) {
-        loadMoreBtn.classList.add('hidden');
-      }
-    } else {
-      loadMoreBtn.classList.add('hidden');
-      Notiflix.Notify.info(
-        "We're sorry, but you've reached the end of search results."
-      );
+  function createImageCards(images) {
+    const fragment = document.createDocumentFragment();
+    for (const image of images) {
+      const card = createImageCard(image);
+      fragment.appendChild(card);
     }
-  } catch (error) {
-    console.log(error);
-    Notiflix.Notify.failure('An error occurred while fetching images.');
-  }
-}
+    gallery.appendChild(fragment);
 
-function handleScroll() {
-  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-  if (scrollTop + clientHeight >= scrollHeight - 5) {
-    window.removeEventListener('scroll', handleScroll);
-    loadMoreImages();
+    lightbox.refresh();
+
+    window.addEventListener('scroll', handleScroll);
+  }
+
+  function createImageCard(image) {
+    const card = document.createElement('div');
+    card.classList.add('photo-card');
+
+    const link = document.createElement('a');
+    link.href = image.largeImageURL;
+    link.setAttribute('data-lightbox', 'photos');
+
+    const img = document.createElement('img');
+    img.src = image.webformatURL;
+    img.alt = image.tags;
+    img.loading = 'lazy';
+
+    const info = document.createElement('div');
+    info.classList.add('info');
+
+    const likes = createInfoItem('Likes', image.likes);
+    const views = createInfoItem('Views', image.views);
+    const comments = createInfoItem('Comments', image.comments);
+    const downloads = createInfoItem('Downloads', image.downloads);
+
+    info.append(likes, views, comments, downloads);
+    link.appendChild(img);
+    card.append(link, info);
+
+    return card;
+  }
+
+  function createInfoItem(label, value) {
+    const item = document.createElement('p');
+    item.classList.add('info-item');
+    item.innerHTML = `<b>${label}: </b>${value}`;
+    return item;
+  }
+
+  async function loadMoreImages() {
+    page++;
+    try {
+      const images = await searchImages(searchQuery, page);
+      if (images.length > 0) {
+        createImageCards(images);
+        if (images.length < 40) {
+          loadMoreBtn.classList.add('hidden');
+        }
+      } else {
+        loadMoreBtn.classList.add('hidden');
+        Notiflix.Notify.info(
+          "We're sorry, but you've reached the end of search results."
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      Notiflix.Notify.failure('An error occurred while fetching images.');
+    }
+  }
+
+  function handleScroll() {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 5) {
+      window.removeEventListener('scroll', handleScroll);
+      loadMoreImages();
+    }
   }
 }
