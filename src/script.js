@@ -12,6 +12,11 @@ let searchQuery = '';
 form.addEventListener('submit', handleFormSubmit);
 loadMoreBtn.addEventListener('click', loadMoreImages);
 
+const lightbox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionPosition: 'bottom',
+});
+
 async function handleFormSubmit(event) {
   event.preventDefault();
   gallery.innerHTML = '';
@@ -21,10 +26,6 @@ async function handleFormSubmit(event) {
   if (searchQuery === '') {
     return;
   }
-  const lightbox = new SimpleLightbox('.gallery a', {
-    captionsData: 'alt',
-    captionPosition: 'bottom',
-  });
 
   loadMoreBtn.classList.add('hidden');
   try {
@@ -45,56 +46,57 @@ async function handleFormSubmit(event) {
   } finally {
     form.searchQuery.value = '';
   }
+}
 
-  function createImageCards(images) {
-    const fragment = document.createDocumentFragment();
-    for (const image of images) {
-      const card = createImageCard(image);
-      fragment.appendChild(card);
-    }
-    gallery.appendChild(fragment);
-
-    lightbox.refresh();
-
-    window.addEventListener('scroll', handleScroll);
+function createImageCards(images) {
+  const fragment = document.createDocumentFragment();
+  for (const image of images) {
+    const card = createImageCard(image);
+    fragment.appendChild(card);
   }
+  gallery.appendChild(fragment);
 
-  function createImageCard(image) {
-    const card = document.createElement('div');
-    card.classList.add('photo-card');
+  lightbox.refresh();
 
-    const link = document.createElement('a');
-    link.href = image.largeImageURL;
-    link.setAttribute('data-lightbox', 'photos');
+  window.addEventListener('scroll', handleScroll);
+}
 
-    const img = document.createElement('img');
-    img.src = image.webformatURL;
-    img.alt = image.tags;
-    img.loading = 'lazy';
+function createImageCard(image) {
+  const card = document.createElement('div');
+  card.classList.add('photo-card');
 
-    const info = document.createElement('div');
-    info.classList.add('info');
+  const link = document.createElement('a');
+  link.href = image.largeImageURL;
+  link.setAttribute('data-lightbox', 'photos');
 
-    const likes = createInfoItem('Likes', image.likes);
-    const views = createInfoItem('Views', image.views);
-    const comments = createInfoItem('Comments', image.comments);
-    const downloads = createInfoItem('Downloads', image.downloads);
+  const img = document.createElement('img');
+  img.src = image.webformatURL;
+  img.alt = image.tags;
+  img.loading = 'lazy';
 
-    info.append(likes, views, comments, downloads);
-    link.appendChild(img);
-    card.append(link, info);
+  const info = document.createElement('div');
+  info.classList.add('info');
 
-    return card;
-  }
+  const likes = createInfoItem('Likes', image.likes);
+  const views = createInfoItem('Views', image.views);
+  const comments = createInfoItem('Comments', image.comments);
+  const downloads = createInfoItem('Downloads', image.downloads);
 
-  function createInfoItem(label, value) {
-    const item = document.createElement('p');
-    item.classList.add('info-item');
-    item.innerHTML = `<b>${label}: </b>${value}`;
-    return item;
-  }
+  info.append(likes, views, comments, downloads);
+  link.appendChild(img);
+  card.append(link, info);
 
- async function loadMoreImages() {
+  return card;
+}
+
+function createInfoItem(label, value) {
+  const item = document.createElement('p');
+  item.classList.add('info-item');
+  item.innerHTML = `<b>${label}: </b>${value}`;
+  return item;
+}
+
+async function loadMoreImages() {
   page++;
   try {
     const images = await searchImages(searchQuery, page);
@@ -102,6 +104,9 @@ async function handleFormSubmit(event) {
       createImageCards(images);
       if (images.length < 40) {
         loadMoreBtn.classList.add('hidden');
+        Notiflix.Notify.info(
+          "We're sorry, but you've reached the end of search results."
+        );
       }
     } else {
       loadMoreBtn.classList.add('hidden');
